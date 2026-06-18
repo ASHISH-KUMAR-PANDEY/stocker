@@ -78,6 +78,23 @@
   .fab{width:44px;height:44px;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:18px}
   .fab.x{color:var(--down)}.fab.h{color:var(--brand)}.fab.s{color:var(--blue);width:36px;height:36px;font-size:14px}.fab.i{color:var(--ink2);width:36px;height:36px;font-size:13px}
 
+  /* auto-swiping demo deck */
+  .deck{position:relative;height:448px;margin-top:6px}
+  .scard{position:absolute;inset:0;background:var(--surface);border-radius:24px;padding:16px;box-shadow:0 14px 34px -16px rgba(0,0,0,.6);transition:transform .55s cubic-bezier(.34,1.05,.5,1),opacity .5s;will-change:transform,opacity}
+  .scard.behind1{transform:translateY(11px) scale(.955)}
+  .scard.behind2{transform:translateY(22px) scale(.91)}
+  .scard.fly-right{transform:translate(380px,-44px) rotate(20deg);opacity:0}
+  .scard.fly-left{transform:translate(-380px,-44px) rotate(-20deg);opacity:0}
+  @keyframes cardrise{from{opacity:.3;transform:translateY(14px) scale(.94)}to{opacity:1;transform:none}}
+  .scard.rise{animation:cardrise .5s ease both}
+  .meter i{transition:width .7s cubic-bezier(.22,1,.36,1)}
+  .stamp{position:absolute;top:20px;font-size:13px;font-weight:800;letter-spacing:.04em;padding:6px 13px;border-radius:11px;opacity:0;transition:opacity .15s;z-index:3}
+  .stamp.like{left:16px;color:var(--brand-ink);background:var(--brand);transform:rotate(-9deg);box-shadow:0 0 16px rgba(198,244,50,.5)}
+  .stamp.nope{right:16px;color:#fff;background:var(--down);transform:rotate(9deg)}
+  .scard.fly-right .stamp.like{opacity:1}
+  .scard.fly-left .stamp.nope{opacity:1}
+  @media(prefers-reduced-motion:reduce){.scard{transition:none}.scard.rise{animation:none}}
+
   /* sections */
   section{padding:64px 0}
   .sec-h{font-size:32px;font-weight:900;letter-spacing:-.8px;text-align:center;margin-bottom:10px}
@@ -132,33 +149,9 @@
     <div class="phone-wrap">
       <div class="phone">
         <div class="ptop"><div class="l">Stock<span>er</span></div><div class="r">Discover</div></div>
-        <div class="card">
-          <div class="crow">
-            <div class="badge">RE</div>
-            <div><div class="tk">RELIANCE</div><div class="nm">Reliance Industries</div></div>
-            <div class="pr"><div class="p">₹1,332.70</div><div class="c">▲ 0.3%</div><div class="d">EOD · delayed</div></div>
-          </div>
-          <div class="bio">India's biggest company — oil-to-chemicals, telecom (Jio) and retail under one roof.</div>
-          <div class="sclabel"><span class="k">Your-type score</span><span class="v">84</span></div>
-          <div class="meter"><i></i></div>
-          <div class="chl"><span class="k">Last 90 days</span><span class="v">▲ 12%</span></div>
-          <div class="chart">
-            <svg width="100%" height="56" viewBox="0 0 260 56" preserveAspectRatio="none">
-              <polygon points="0,56 0,44 26,46 52,40 78,42 104,33 130,35 156,26 182,28 208,18 234,14 260,8 260,56" fill="rgba(52,229,161,.1)"/>
-              <polyline points="0,44 26,46 52,40 78,42 104,33 130,35 156,26 182,28 208,18 234,14 260,8" fill="none" stroke="var(--up)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
-            </svg>
-          </div>
-          <div class="stats">
-            <div class="stat"><div class="k">Volatility</div><div class="v">Medium</div></div>
-            <div class="stat"><div class="k">Dividend</div><div class="v">Yes</div></div>
-          </div>
-          <div class="flags">
-            <div class="flag"><span class="dot g"></span>Consistent profits &amp; dividend</div>
-            <div class="flag"><span class="dot b"></span>Sheer size caps fast growth</div>
-          </div>
-          <div class="acts">
-            <div class="fab i">ℹ</div><div class="fab x">✕</div><div class="fab s">★</div><div class="fab h">♥</div>
-          </div>
+        <div class="deck" id="deck"></div>
+        <div class="acts">
+          <div class="fab i">ℹ</div><div class="fab x">✕</div><div class="fab s">★</div><div class="fab h">♥</div>
         </div>
       </div>
     </div>
@@ -224,5 +217,61 @@ python3 server.py&nbsp;&nbsp;&nbsp;<span class="c"># → http://127.0.0.1:4173</
   </div>
 </footer>
 
+<script>
+(function(){
+  var DATA=[
+   {tk:'RELIANCE',name:'Reliance Industries',color:'#5b9dff',price:'1,332.70',chg:0.3,score:84,perf:12,up:true,vol:'Medium',div:'Yes',
+    bio:"India's biggest company — oil-to-chemicals, telecom (Jio) and retail.",
+    fg:'Consistent profits &amp; dividend',fb:'Sheer size caps fast growth',
+    pts:'0,44 26,46 52,40 78,42 104,33 130,35 156,26 182,28 208,18 234,14 260,8'},
+   {tk:'TCS',name:'Tata Consultancy Services',color:'#7c9bff',price:'2,223.00',chg:1.1,score:76,perf:31,up:false,vol:'High',div:'Yes',
+    bio:"India's largest IT-services exporter. Steady, cash-rich.",
+    fg:'Rock-steady cash machine',fb:'Growth tied to global IT spend',
+    pts:'0,10 26,14 52,12 78,20 104,22 130,28 156,30 182,38 208,36 234,44 260,48'},
+   {tk:'ITC',name:'ITC Ltd',color:'#ff8f5e',price:'290.75',chg:-0.3,score:71,perf:8,up:false,vol:'Low',div:'Yes',
+    bio:"Cigarettes-to-FMCG-to-hotels. Fat dividend, cheap valuation.",
+    fg:'Generous ~3–4% dividend yield',fb:'Tobacco regulation &amp; taxes',
+    pts:'0,22 26,20 52,26 78,24 104,30 130,29 156,33 182,34 208,38 234,40 260,43'},
+   {tk:'ADANIGREEN',name:'Adani Green Energy',color:'#2dd4a7',price:'1,465.80',chg:-1.1,score:78,perf:57,up:true,vol:'High',div:'No',
+    bio:"Pure-play renewable energy — solar &amp; wind at scale.",
+    fg:'Riding the clean-energy build-out',fb:'Very volatile',
+    pts:'0,50 26,49 52,44 78,40 104,42 130,32 156,26 182,20 208,18 234,11 260,4'}
+  ];
+  var deck=document.getElementById('deck'); if(!deck) return;
+  var n=DATA.length, i=0;
+  function card(s,cls){
+    var col=s.up?'var(--up)':'var(--down)', fill=s.up?'rgba(52,229,161,.1)':'rgba(255,91,110,.1)';
+    var chgCol=s.chg>=0?'var(--up)':'var(--down)';
+    return '<div class="scard '+cls+'">'
+      +'<div class="stamp like">LIKE</div><div class="stamp nope">PASS</div>'
+      +'<div class="crow"><div class="badge" style="background:linear-gradient(145deg,color-mix(in srgb,'+s.color+' 100%,white 22%),'+s.color+')">'+s.tk.slice(0,2)+'</div>'
+      +'<div><div class="tk">'+s.tk+'</div><div class="nm">'+s.name+'</div></div>'
+      +'<div class="pr"><div class="p">₹'+s.price+'</div><div class="c" style="color:'+chgCol+'">'+(s.chg>=0?'▲':'▼')+' '+Math.abs(s.chg)+'%</div><div class="d">EOD · delayed</div></div></div>'
+      +'<div class="bio">'+s.bio+'</div>'
+      +'<div class="sclabel"><span class="k">Your-type score</span><span class="v">'+s.score+'</span></div>'
+      +'<div class="meter"><i style="width:'+s.score+'%"></i></div>'
+      +'<div class="chl"><span class="k">Last 90 days</span><span class="v" style="color:'+col+'">'+(s.up?'▲':'▼')+' '+s.perf+'%</span></div>'
+      +'<div class="chart"><svg width="100%" height="56" viewBox="0 0 260 56" preserveAspectRatio="none"><polygon points="0,56 '+s.pts+' 260,56" fill="'+fill+'"/><polyline points="'+s.pts+'" fill="none" stroke="'+col+'" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/></svg></div>'
+      +'<div class="stats"><div class="stat"><div class="k">Volatility</div><div class="v">'+s.vol+'</div></div><div class="stat"><div class="k">Dividend</div><div class="v">'+s.div+'</div></div></div>'
+      +'<div class="flags"><div class="flag"><span class="dot g"></span>'+s.fg+'</div><div class="flag"><span class="dot b"></span>'+s.fb+'</div></div>'
+      +'</div>';
+  }
+  function render(){
+    var a=DATA[i%n], b=DATA[(i+1)%n], c=DATA[(i+2)%n];
+    deck.innerHTML=card(c,'behind2')+card(b,'behind1')+card(a,'rise');
+    var mi=deck.lastElementChild.querySelector('.meter i');
+    mi.style.width='0%';
+    requestAnimationFrame(function(){requestAnimationFrame(function(){ mi.style.width=a.score+'%'; });});
+  }
+  function tick(){
+    var front=deck.lastElementChild; if(!front) return;
+    front.classList.remove('rise');
+    front.classList.add(i%2===0?'fly-right':'fly-left');
+    setTimeout(function(){ i=(i+1)%n; render(); }, 560);
+  }
+  render();
+  setInterval(tick, 2700);
+})();
+</script>
 </body>
 </html>
