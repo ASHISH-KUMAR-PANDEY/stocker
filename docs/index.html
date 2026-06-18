@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stocker — Dating, but for stocks</title>
+<meta name="description" content="Swipe through stocks like a dating app. Stocker learns your investing type and builds you a personalized deck. Education-only, self-hosted, bring-your-own-broker.">
+<meta property="og:title" content="Stocker — Dating, but for stocks">
+<meta property="og:description" content="Swipe to discover stocks. Learn your type. Self-host it free.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B0B0F; --surface:#15161C; --surface2:#1E2028; --line:#262833;
+    --ink:#F5F6FA; --ink2:#AEB2C2; --ink3:#767A8C;
+    --brand:#C6F432; --brand2:#7CE0A8; --brand-ink:#0B0B0F;
+    --up:#34E5A1; --down:#FF5B6E; --blue:#5b9dff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Inter,-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--ink);line-height:1.5;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 22px}
+
+  /* nav */
+  nav{display:flex;align-items:center;justify-content:space-between;padding:20px 0}
+  .logo{font-weight:900;font-size:22px;letter-spacing:-.5px}
+  .logo span{color:var(--brand)}
+  .nav-cta{font-size:14px;font-weight:700;background:var(--surface2);border:1px solid var(--line);padding:9px 16px;border-radius:11px;transition:.15s}
+  .nav-cta:hover{border-color:#3a3d4d}
+
+  /* hero */
+  .hero{display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center;padding:48px 0 70px}
+  .eyebrow{display:inline-block;font-size:12px;font-weight:700;color:var(--brand);background:rgba(198,244,50,.1);border:1px solid rgba(198,244,50,.25);padding:6px 12px;border-radius:99px;margin-bottom:20px;letter-spacing:.02em}
+  h1{font-size:52px;line-height:1.05;letter-spacing:-1.5px;font-weight:900;margin-bottom:18px}
+  h1 .hl{background:linear-gradient(90deg,var(--brand),var(--brand2));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .lede{font-size:18px;color:var(--ink2);max-width:520px;margin-bottom:28px}
+  .btns{display:flex;gap:12px;flex-wrap:wrap}
+  .btn{font-weight:800;font-size:15px;padding:14px 22px;border-radius:13px;transition:transform .15s,background .15s;display:inline-flex;align-items:center;gap:9px}
+  .btn.primary{background:var(--brand);color:var(--brand-ink)}
+  .btn.primary:hover{transform:translateY(-2px)}
+  .btn.ghost{background:var(--surface2);border:1px solid var(--line);color:var(--ink)}
+  .btn.ghost:hover{border-color:#3a3d4d}
+  .note{font-size:12.5px;color:var(--ink3);margin-top:18px}
+
+  /* phone mockup */
+  .phone-wrap{display:flex;justify-content:center}
+  .phone{width:300px;background:var(--bg);border:1px solid var(--line);border-radius:34px;padding:14px 12px 16px;box-shadow:0 30px 80px -20px rgba(0,0,0,.7),0 0 0 1px rgba(255,255,255,.02);position:relative}
+  .ptop{display:flex;justify-content:space-between;align-items:center;padding:4px 8px 12px}
+  .ptop .l{font-weight:900;font-size:16px}.ptop .l span{color:var(--brand)}
+  .ptop .r{font-size:11px;color:var(--ink3)}
+  .card{background:var(--surface);border-radius:24px;padding:16px;box-shadow:0 12px 32px -16px rgba(0,0,0,.6)}
+  .crow{display:flex;align-items:center;gap:11px}
+  .badge{width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;color:#fff;background:linear-gradient(145deg,#7fb4ff,var(--blue));flex:none}
+  .tk{font-size:19px;font-weight:800;letter-spacing:-.4px}
+  .nm{font-size:11px;color:var(--ink2)}
+  .pr{margin-left:auto;text-align:right}
+  .pr .p{font-size:17px;font-weight:800}
+  .pr .c{font-size:11px;font-weight:700;color:var(--up)}
+  .pr .d{font-size:9px;color:var(--ink3);background:rgba(255,255,255,.05);padding:2px 6px;border-radius:6px;display:inline-block;margin-top:3px;font-weight:700}
+  .bio{font-size:12px;color:var(--ink2);margin-top:11px;line-height:1.4}
+  .sclabel{display:flex;justify-content:space-between;align-items:baseline;margin-top:15px}
+  .sclabel .k{font-size:9.5px;font-weight:700;color:var(--ink2);text-transform:uppercase;letter-spacing:.06em}
+  .sclabel .v{font-size:18px;font-weight:800;color:var(--brand)}
+  .meter{height:5px;border-radius:99px;background:rgba(255,255,255,.07);margin-top:7px;overflow:hidden}
+  .meter i{display:block;height:100%;width:84%;background:linear-gradient(90deg,var(--brand2),var(--brand));border-radius:99px}
+  .chl{display:flex;justify-content:space-between;align-items:baseline;margin-top:14px}
+  .chl .k{font-size:9.5px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em}
+  .chl .v{font-size:11px;font-weight:800;color:var(--up)}
+  .chart{margin-top:6px}
+  .stats{display:flex;gap:22px;margin-top:13px}
+  .stat .k{font-size:9px;color:var(--ink3);text-transform:uppercase;letter-spacing:.05em;font-weight:700}
+  .stat .v{font-size:13px;font-weight:700;margin-top:2px}
+  .flags{margin-top:13px;display:flex;flex-direction:column;gap:6px}
+  .flag{display:flex;gap:7px;align-items:center;font-size:11.5px}
+  .dot{width:7px;height:7px;border-radius:99px;flex:none}
+  .dot.g{background:var(--up)}.dot.b{background:var(--down)}
+  .acts{display:flex;justify-content:center;gap:13px;margin-top:16px}
+  .fab{width:44px;height:44px;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:18px}
+  .fab.x{color:var(--down)}.fab.h{color:var(--brand)}.fab.s{color:var(--blue);width:36px;height:36px;font-size:14px}.fab.i{color:var(--ink2);width:36px;height:36px;font-size:13px}
+
+  /* sections */
+  section{padding:64px 0}
+  .sec-h{font-size:32px;font-weight:900;letter-spacing:-.8px;text-align:center;margin-bottom:10px}
+  .sec-sub{text-align:center;color:var(--ink2);max-width:560px;margin:0 auto 44px}
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  .step{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:24px}
+  .step .n{width:32px;height:32px;border-radius:9px;background:var(--brand);color:var(--brand-ink);font-weight:900;display:flex;align-items:center;justify-content:center;margin-bottom:14px}
+  .step h3{font-size:17px;font-weight:800;margin-bottom:7px;letter-spacing:-.2px}
+  .step p{font-size:14px;color:var(--ink2)}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .feat{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:22px}
+  .feat .ico{font-size:24px;margin-bottom:12px}
+  .feat h3{font-size:15.5px;font-weight:800;margin-bottom:6px}
+  .feat p{font-size:13.5px;color:var(--ink2)}
+  .code{background:#0d0e13;border:1px solid var(--line);border-radius:16px;padding:22px;max-width:640px;margin:0 auto;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13.5px;color:var(--ink2);line-height:1.8;overflow-x:auto}
+  .code .c{color:var(--ink3)} .code .g{color:var(--brand2)}
+  .disc{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:24px;max-width:760px;margin:0 auto;text-align:center}
+  .disc h3{font-size:15px;font-weight:800;margin-bottom:8px}
+  .disc p{font-size:13px;color:var(--ink2)}
+  footer{border-top:1px solid var(--line);padding:30px 0;text-align:center;color:var(--ink3);font-size:13px}
+  footer a{color:var(--ink2);font-weight:600}
+
+  @media(max-width:860px){
+    .hero{grid-template-columns:1fr;gap:36px;padding:24px 0 50px}
+    h1{font-size:40px} .lede{font-size:16px}
+    .steps,.grid{grid-template-columns:1fr}
+    .phone-wrap{order:-1}
+    .sec-h{font-size:26px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <nav>
+    <div class="logo">Stock<span>er</span></div>
+    <a class="nav-cta" href="https://github.com/ASHISH-KUMAR-PANDEY/stocker">★ View on GitHub</a>
+  </nav>
+
+  <header class="hero">
+    <div>
+      <span class="eyebrow">Education-only · self-hosted · open</span>
+      <h1>Dating,<br>but for <span class="hl">stocks.</span></h1>
+      <p class="lede">Swipe through stocks like a dating app. Stocker learns your investing <b>type</b> from a quick quiz and your swipes, then builds you a personalized deck — and an optional real portfolio through <b>your own</b> broker.</p>
+      <div class="btns">
+        <a class="btn primary" href="https://github.com/ASHISH-KUMAR-PANDEY/stocker">↓ Get Stocker</a>
+        <a class="btn ghost" href="#quickstart">Run it in 1 minute</a>
+      </div>
+      <div class="note">🔒 Not investment advice. You self-host it, connect your own broker, hold your own keys. Stocker never touches your money.</div>
+    </div>
+
+    <div class="phone-wrap">
+      <div class="phone">
+        <div class="ptop"><div class="l">Stock<span>er</span></div><div class="r">Discover</div></div>
+        <div class="card">
+          <div class="crow">
+            <div class="badge">RE</div>
+            <div><div class="tk">RELIANCE</div><div class="nm">Reliance Industries</div></div>
+            <div class="pr"><div class="p">₹1,332.70</div><div class="c">▲ 0.3%</div><div class="d">EOD · delayed</div></div>
+          </div>
+          <div class="bio">India's biggest company — oil-to-chemicals, telecom (Jio) and retail under one roof.</div>
+          <div class="sclabel"><span class="k">Your-type score</span><span class="v">84</span></div>
+          <div class="meter"><i></i></div>
+          <div class="chl"><span class="k">Last 90 days</span><span class="v">▲ 12%</span></div>
+          <div class="chart">
+            <svg width="100%" height="56" viewBox="0 0 260 56" preserveAspectRatio="none">
+              <polygon points="0,56 0,44 26,46 52,40 78,42 104,33 130,35 156,26 182,28 208,18 234,14 260,8 260,56" fill="rgba(52,229,161,.1)"/>
+              <polyline points="0,44 26,46 52,40 78,42 104,33 130,35 156,26 182,28 208,18 234,14 260,8" fill="none" stroke="var(--up)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="stats">
+            <div class="stat"><div class="k">Volatility</div><div class="v">Medium</div></div>
+            <div class="stat"><div class="k">Dividend</div><div class="v">Yes</div></div>
+          </div>
+          <div class="flags">
+            <div class="flag"><span class="dot g"></span>Consistent profits &amp; dividend</div>
+            <div class="flag"><span class="dot b"></span>Sheer size caps fast growth</div>
+          </div>
+          <div class="acts">
+            <div class="fab i">ℹ</div><div class="fab x">✕</div><div class="fab s">★</div><div class="fab h">♥</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+</div>
+
+<section style="background:var(--surface)">
+  <div class="wrap">
+    <h2 class="sec-h">How it works</h2>
+    <p class="sec-sub">Research turned into a habit — the fun part of investing, before any money is on the line.</p>
+    <div class="steps">
+      <div class="step"><div class="n">1</div><h3>Tell it your type</h3><p>A 30-second quiz — your risk, style, sectors, values. No jargon.</p></div>
+      <div class="step"><div class="n">2</div><h3>Swipe to discover</h3><p>A personalized deck with a transparent "your-type score," a real 90-day chart, and plain-English green/red flags.</p></div>
+      <div class="step"><div class="n">3</div><h3>Build a portfolio</h3><p>Matches become a paper portfolio. When you're ready, invest for real through your own broker.</p></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2 class="sec-h">What's inside</h2>
+    <p class="sec-sub">Real data, an honest score, and a clean line between discovery and your money.</p>
+    <div class="grid">
+      <div class="feat"><div class="ico">🔥</div><h3>Swipe-first discovery</h3><p>Right = like, left = pass, ★ = watch. Discovery that feels like a feed, not a screener.</p></div>
+      <div class="feat"><div class="ico">✦</div><h3>Your-type score</h3><p>A transparent <i>similarity</i> score — not a buy rating — with a one-line "why."</p></div>
+      <div class="feat"><div class="ico">📈</div><h3>Real NSE data</h3><p>Live end-of-day prices, 90-day charts, computed volatility/momentum, real news headlines — free.</p></div>
+      <div class="feat"><div class="ico">📊</div><h3>Paper portfolio</h3><p>Track matches with P&amp;L, allocation, cash and buy/sell — play money by default.</p></div>
+      <div class="feat"><div class="ico">🔗</div><h3>Bring your own broker</h3><p>Connect your own Zerodha and place real basket orders. Stocker never holds your money.</p></div>
+      <div class="feat"><div class="ico">🛡️</div><h3>Safe by design</h3><p>The swipe never buys. A cost/funds guard and a spend cap stand between you and a mistap.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="quickstart" style="background:var(--surface)">
+  <div class="wrap">
+    <h2 class="sec-h">Run your own in a minute</h2>
+    <p class="sec-sub">It's one Python app. Demo mode needs no keys and no money.</p>
+    <div class="code">
+<span class="c"># clone &amp; run the safe demo</span><br>
+git clone https://github.com/ASHISH-KUMAR-PANDEY/stocker.git<br>
+cd stocker<br>
+python3 -m pip install -r requirements.txt<br>
+python3 server.py&nbsp;&nbsp;&nbsp;<span class="c"># → http://127.0.0.1:4173</span><br><br>
+<span class="g">✓ open it, swipe, build a paper portfolio — no login, no money</span>
+    </div>
+    <p style="text-align:center;margin-top:22px"><a class="btn ghost" href="https://github.com/ASHISH-KUMAR-PANDEY/stocker#readme">Read the full guide →</a></p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="disc">
+      <h3>⚠️ Educational project — not investment advice</h3>
+      <p>Stocker is an open, self-hosted, educational tool. It is not a brokerage and does not hold your money or securities. You run your own copy and are solely responsible for your own trades and any losses. No fractional shares in India — the smallest real buy is one whole share. Company info is illustrative; prices, charts and news are real. Comply with your broker's terms and local regulations.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="logo" style="font-size:18px;margin-bottom:8px">Stock<span>er</span></div>
+    <a href="https://github.com/ASHISH-KUMAR-PANDEY/stocker">GitHub</a> · stocker.buzz · built for the curious, not the advised
+  </div>
+</footer>
+
+</body>
+</html>
