@@ -93,7 +93,26 @@
   .stamp.nope{right:16px;color:#fff;background:var(--down);transform:rotate(9deg)}
   .scard.fly-right .stamp.like{opacity:1}
   .scard.fly-left .stamp.nope{opacity:1}
-  @media(prefers-reduced-motion:reduce){.scard{transition:none}.scard.rise{animation:none}}
+  /* drag (gesture) phase — card moves partway, stamp ramps in */
+  .scard.drag-right{transform:translate(78px,-10px) rotate(7deg)}
+  .scard.drag-left{transform:translate(-78px,-10px) rotate(-7deg)}
+  .scard.drag-right .stamp.like{opacity:1}
+  .scard.drag-left .stamp.nope{opacity:1}
+  /* finger / touch cue */
+  .touch{position:absolute;left:50%;top:58%;width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,.14);border:1.5px solid rgba(255,255,255,.3);transform:translate(-50%,-50%) scale(0);opacity:0;transition:transform .62s cubic-bezier(.4,0,.2,1),opacity .25s;pointer-events:none;z-index:5}
+  .touch.go-right{opacity:1;transform:translate(calc(-50% + 96px),-50%) scale(1)}
+  .touch.go-left{opacity:1;transform:translate(calc(-50% - 96px),-50%) scale(1)}
+  /* It's a match! overlay */
+  .matchpop{position:absolute;inset:0;background:rgba(11,11,15,.88);border-radius:34px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;opacity:0;pointer-events:none;transition:opacity .3s;z-index:6;overflow:hidden}
+  .matchpop.show{opacity:1}
+  .matchpop .mc{width:74px;height:74px;border-radius:21px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:24px;color:#fff;margin-bottom:8px;transform:scale(.3) rotate(-12deg);transition:transform .5s cubic-bezier(.34,1.56,.64,1)}
+  .matchpop.show .mc{transform:none}
+  .matchpop h3{font-size:25px;font-weight:900;letter-spacing:-.6px;background:linear-gradient(90deg,var(--brand),var(--brand2) 60%,#fff);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .matchpop p{font-size:11.5px;color:var(--ink2)}
+  .conf{position:absolute;top:42%;font-size:15px;opacity:0}
+  .matchpop.show .conf{animation:cfloat .9s ease-out forwards}
+  @keyframes cfloat{0%{transform:translateY(0) scale(.5);opacity:0}25%{opacity:1}100%{transform:translateY(-150px) rotate(40deg) scale(1.1);opacity:0}}
+  @media(prefers-reduced-motion:reduce){.scard,.touch,.matchpop{transition:none}.scard.rise,.matchpop.show .conf{animation:none}}
 
   /* sections */
   section{padding:64px 0}
@@ -150,6 +169,8 @@
       <div class="phone">
         <div class="ptop"><div class="l">Stock<span>er</span></div><div class="r">Discover</div></div>
         <div class="deck" id="deck"></div>
+        <div class="touch" id="touch"></div>
+        <div class="matchpop" id="matchpop"></div>
         <div class="acts">
           <div class="fab i">ℹ</div><div class="fab x">✕</div><div class="fab s">★</div><div class="fab h">♥</div>
         </div>
@@ -256,6 +277,7 @@ python3 server.py&nbsp;&nbsp;&nbsp;<span class="c"># → http://127.0.0.1:4173</
       +'<div class="flags"><div class="flag"><span class="dot g"></span>'+s.fg+'</div><div class="flag"><span class="dot b"></span>'+s.fb+'</div></div>'
       +'</div>';
   }
+  var touch=document.getElementById('touch'), pop=document.getElementById('matchpop');
   function render(){
     var a=DATA[i%n], b=DATA[(i+1)%n], c=DATA[(i+2)%n];
     deck.innerHTML=card(c,'behind2')+card(b,'behind1')+card(a,'rise');
@@ -263,14 +285,31 @@ python3 server.py&nbsp;&nbsp;&nbsp;<span class="c"># → http://127.0.0.1:4173</
     mi.style.width='0%';
     requestAnimationFrame(function(){requestAnimationFrame(function(){ mi.style.width=a.score+'%'; });});
   }
-  function tick(){
-    var front=deck.lastElementChild; if(!front) return;
+  function showMatch(s){
+    var emo=['🎉','✨','💚','⭐','🍋','🔥'], cf='';
+    for(var k=0;k<6;k++){ cf+='<span class="conf" style="left:'+(16+k*13)+'%;animation-delay:'+(k*0.05)+'s">'+emo[k%emo.length]+'</span>'; }
+    pop.innerHTML='<div class="mc" style="background:linear-gradient(145deg,color-mix(in srgb,'+s.color+' 100%,white 22%),'+s.color+')">'+s.tk.slice(0,2)+'</div><h3>It’s a match!</h3><p>'+s.tk+' · added to your watchlist</p>'+cf;
+    pop.classList.add('show');
+  }
+  function advance(){ i=(i+1)%n; render(); setTimeout(cycle, 760); }
+  function cycle(){
+    var s=DATA[i%n], front=deck.lastElementChild; if(!front) return;
+    var like = s.score>=78, dir = like?'right':'left';
     front.classList.remove('rise');
-    front.classList.add(i%2===0?'fly-right':'fly-left');
-    setTimeout(function(){ i=(i+1)%n; render(); }, 560);
+    touch.className='touch go-'+dir;            // finger cue slides
+    front.classList.add('drag-'+dir);           // Phase A: gesture drag + stamp
+    setTimeout(function(){
+      touch.className='touch';
+      front.classList.remove('drag-'+dir);
+      front.classList.add('fly-'+dir);          // Phase B: throw
+      setTimeout(function(){
+        if(like){ showMatch(s); setTimeout(function(){ pop.classList.remove('show'); advance(); }, 1500); }
+        else { advance(); }
+      }, 520);
+    }, 680);
   }
   render();
-  setInterval(tick, 2700);
+  setTimeout(cycle, 1100);
 })();
 </script>
 </body>
