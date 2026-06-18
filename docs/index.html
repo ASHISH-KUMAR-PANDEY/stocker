@@ -80,7 +80,7 @@
 
   /* auto-swiping demo deck */
   .deck{position:relative;height:448px;margin-top:6px}
-  .scard{position:absolute;inset:0;background:var(--surface);border-radius:24px;padding:16px;box-shadow:0 14px 34px -16px rgba(0,0,0,.6);transition:transform .55s cubic-bezier(.34,1.05,.5,1),opacity .5s;will-change:transform,opacity}
+  .scard{position:absolute;inset:0;background:var(--surface);border-radius:24px;padding:16px;box-shadow:0 14px 34px -16px rgba(0,0,0,.6);transition:transform .6s cubic-bezier(.22,1,.36,1),opacity .55s ease;will-change:transform,opacity}
   .scard.behind1{transform:translateY(11px) scale(.955)}
   .scard.behind2{transform:translateY(22px) scale(.91)}
   .scard.fly-right{transform:translate(380px,-44px) rotate(20deg);opacity:0}
@@ -109,10 +109,10 @@
   .matchpop.show .mc{transform:none}
   .matchpop h3{font-size:25px;font-weight:900;letter-spacing:-.6px;background:linear-gradient(90deg,var(--brand),var(--brand2) 60%,#fff);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
   .matchpop p{font-size:11.5px;color:var(--ink2)}
-  .conf{position:absolute;top:42%;font-size:15px;opacity:0}
-  .matchpop.show .conf{animation:cfloat .9s ease-out forwards}
-  @keyframes cfloat{0%{transform:translateY(0) scale(.5);opacity:0}25%{opacity:1}100%{transform:translateY(-150px) rotate(40deg) scale(1.1);opacity:0}}
-  @media(prefers-reduced-motion:reduce){.scard,.touch,.matchpop{transition:none}.scard.rise,.matchpop.show .conf{animation:none}}
+  .spark{position:absolute;opacity:0;transform:scale(0);color:var(--brand);text-shadow:0 0 9px rgba(198,244,50,.75);pointer-events:none}
+  .matchpop.show .spark{animation:twinkle 1.2s ease-out forwards}
+  @keyframes twinkle{0%{opacity:0;transform:scale(0) rotate(0)}45%{opacity:1;transform:scale(1.15) rotate(45deg)}100%{opacity:0;transform:scale(.35) rotate(90deg)}}
+  @media(prefers-reduced-motion:reduce){.scard,.touch,.matchpop{transition:none}.scard.rise,.matchpop.show .spark{animation:none}}
 
   /* sections */
   section{padding:64px 0}
@@ -260,11 +260,10 @@ python3 server.py&nbsp;&nbsp;&nbsp;<span class="c"># → http://127.0.0.1:4173</
   ];
   var deck=document.getElementById('deck'); if(!deck) return;
   var n=DATA.length, i=0;
-  function card(s,cls){
+  function inner(s){
     var col=s.up?'var(--up)':'var(--down)', fill=s.up?'rgba(52,229,161,.1)':'rgba(255,91,110,.1)';
     var chgCol=s.chg>=0?'var(--up)':'var(--down)';
-    return '<div class="scard '+cls+'">'
-      +'<div class="stamp like">LIKE</div><div class="stamp nope">PASS</div>'
+    return '<div class="stamp like">LIKE</div><div class="stamp nope">PASS</div>'
       +'<div class="crow"><div class="badge" style="background:linear-gradient(145deg,color-mix(in srgb,'+s.color+' 100%,white 22%),'+s.color+')">'+s.tk.slice(0,2)+'</div>'
       +'<div><div class="tk">'+s.tk+'</div><div class="nm">'+s.name+'</div></div>'
       +'<div class="pr"><div class="p">₹'+s.price+'</div><div class="c" style="color:'+chgCol+'">'+(s.chg>=0?'▲':'▼')+' '+Math.abs(s.chg)+'%</div><div class="d">EOD · delayed</div></div></div>'
@@ -274,42 +273,60 @@ python3 server.py&nbsp;&nbsp;&nbsp;<span class="c"># → http://127.0.0.1:4173</
       +'<div class="chl"><span class="k">Last 90 days</span><span class="v" style="color:'+col+'">'+(s.up?'▲':'▼')+' '+s.perf+'%</span></div>'
       +'<div class="chart"><svg width="100%" height="56" viewBox="0 0 260 56" preserveAspectRatio="none"><polygon points="0,56 '+s.pts+' 260,56" fill="'+fill+'"/><polyline points="'+s.pts+'" fill="none" stroke="'+col+'" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/></svg></div>'
       +'<div class="stats"><div class="stat"><div class="k">Volatility</div><div class="v">'+s.vol+'</div></div><div class="stat"><div class="k">Dividend</div><div class="v">'+s.div+'</div></div></div>'
-      +'<div class="flags"><div class="flag"><span class="dot g"></span>'+s.fg+'</div><div class="flag"><span class="dot b"></span>'+s.fb+'</div></div>'
-      +'</div>';
+      +'<div class="flags"><div class="flag"><span class="dot g"></span>'+s.fg+'</div><div class="flag"><span class="dot b"></span>'+s.fb+'</div></div>';
   }
+  function card(s,cls){ return '<div class="scard '+cls+'">'+inner(s)+'</div>'; }
   var touch=document.getElementById('touch'), pop=document.getElementById('matchpop');
-  function render(){
-    var a=DATA[i%n], b=DATA[(i+1)%n], c=DATA[(i+2)%n];
-    deck.innerHTML=card(c,'behind2')+card(b,'behind1')+card(a,'rise');
-    var mi=deck.lastElementChild.querySelector('.meter i');
-    mi.style.width='0%';
-    requestAnimationFrame(function(){requestAnimationFrame(function(){ mi.style.width=a.score+'%'; });});
+
+  // three persistent cards — DOM order back→front (last child is on top)
+  deck.innerHTML = card(DATA[2],'behind2') + card(DATA[1],'behind1') + card(DATA[0],'front');
+  var backEl=deck.children[0], midEl=deck.children[1], frontEl=deck.children[2];
+
+  function fillMeter(el,score){
+    var mi=el.querySelector('.meter i'); mi.style.transition='none'; mi.style.width='0%';
+    requestAnimationFrame(function(){requestAnimationFrame(function(){ mi.style.transition=''; mi.style.width=score+'%'; });});
   }
+  fillMeter(frontEl, DATA[0].score);
+
   function showMatch(s){
-    var emo=['🎉','✨','💚','⭐','🍋','🔥'], cf='';
-    for(var k=0;k<6;k++){ cf+='<span class="conf" style="left:'+(16+k*13)+'%;animation-delay:'+(k*0.05)+'s">'+emo[k%emo.length]+'</span>'; }
-    pop.innerHTML='<div class="mc" style="background:linear-gradient(145deg,color-mix(in srgb,'+s.color+' 100%,white 22%),'+s.color+')">'+s.tk.slice(0,2)+'</div><h3>It’s a match!</h3><p>'+s.tk+' · added to your watchlist</p>'+cf;
+    var cols=['var(--brand)','#fff','var(--brand2)'];
+    var pos=[[26,28],[70,26],[18,54],[80,50],[44,18],[52,64],[34,46],[64,58]], sp='';
+    for(var k=0;k<pos.length;k++){ sp+='<span class="spark" style="left:'+pos[k][0]+'%;top:'+pos[k][1]+'%;font-size:'+(11+(k%3)*4)+'px;color:'+cols[k%3]+';animation-delay:'+(k*0.07)+'s">✦</span>'; }
+    pop.innerHTML='<div class="mc" style="background:linear-gradient(145deg,color-mix(in srgb,'+s.color+' 100%,white 22%),'+s.color+')">'+s.tk.slice(0,2)+'</div><h3>It’s a match!</h3><p>'+s.tk+' · added to your watchlist</p>'+sp;
     pop.classList.add('show');
   }
-  function advance(){ i=(i+1)%n; render(); setTimeout(cycle, 760); }
+
+  function promote(){                       // smooth stack advance — no rebuild/teleport
+    i=(i+1)%n;
+    var flown=frontEl;
+    flown.style.transition='none';
+    flown.className='scard behind2';
+    flown.innerHTML=inner(DATA[(i+2)%n]);
+    deck.insertBefore(flown, deck.firstChild);   // recycle to the back
+    void flown.offsetWidth;                       // commit, then re-enable transition
+    flown.style.transition='';
+    midEl.className='scard front';                // behind1 → front (transitions up)
+    fillMeter(midEl, DATA[i%n].score);
+    backEl.className='scard behind1';             // behind2 → behind1
+    frontEl=midEl; midEl=backEl; backEl=flown;
+  }
+
   function cycle(){
-    var s=DATA[i%n], front=deck.lastElementChild; if(!front) return;
-    var like = s.score>=78, dir = like?'right':'left';
-    front.classList.remove('rise');
-    touch.className='touch go-'+dir;            // finger cue slides
-    front.classList.add('drag-'+dir);           // Phase A: gesture drag + stamp
+    var s=DATA[i%n]; if(!frontEl) return;
+    var like=s.score>=78, dir=like?'right':'left';
+    touch.className='touch go-'+dir;              // finger cue slides
+    frontEl.classList.add('drag-'+dir);           // Phase A: gesture drag + stamp
     setTimeout(function(){
       touch.className='touch';
-      front.classList.remove('drag-'+dir);
-      front.classList.add('fly-'+dir);          // Phase B: throw
+      frontEl.classList.remove('drag-'+dir);
+      frontEl.classList.add('fly-'+dir);          // Phase B: throw (continues same direction)
       setTimeout(function(){
-        if(like){ showMatch(s); setTimeout(function(){ pop.classList.remove('show'); advance(); }, 1500); }
-        else { advance(); }
-      }, 520);
-    }, 680);
+        if(like){ showMatch(s); setTimeout(function(){ pop.classList.remove('show'); promote(); setTimeout(cycle,820); }, 1500); }
+        else { promote(); setTimeout(cycle,820); }
+      }, 560);
+    }, 720);
   }
-  render();
-  setTimeout(cycle, 1100);
+  setTimeout(cycle, 1200);
 })();
 </script>
 </body>
