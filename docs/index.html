@@ -88,16 +88,16 @@
   @keyframes cardrise{from{opacity:.3;transform:translateY(14px) scale(.94)}to{opacity:1;transform:none}}
   .scard.rise{animation:cardrise .5s ease both}
   .meter i{transition:width .7s cubic-bezier(.22,1,.36,1)}
-  .stamp{position:absolute;top:20px;font-size:13px;font-weight:800;letter-spacing:.04em;padding:6px 13px;border-radius:11px;opacity:0;transition:opacity .15s;z-index:3}
-  .stamp.like{left:16px;color:var(--brand-ink);background:var(--brand);transform:rotate(-9deg);box-shadow:0 0 16px rgba(198,244,50,.5)}
-  .stamp.nope{right:16px;color:#fff;background:var(--down);transform:rotate(9deg)}
-  .scard.fly-right .stamp.like{opacity:1}
-  .scard.fly-left .stamp.nope{opacity:1}
+  .stamp{position:absolute;top:24px;font-size:18px;font-weight:900;letter-spacing:.12em;padding:9px 18px;border-radius:13px;opacity:0;z-index:4;border:3px solid;transition:opacity .15s ease,transform .22s cubic-bezier(.34,1.56,.64,1)}
+  .stamp.like{left:14px;color:var(--brand-ink);background:var(--brand);border-color:#f0ffb0;transform:rotate(-11deg) scale(.65);box-shadow:0 8px 26px rgba(198,244,50,.6),0 0 0 1.5px rgba(0,0,0,.25)}
+  .stamp.nope{right:14px;color:#fff;background:var(--down);border-color:#ffb3bc;transform:rotate(11deg) scale(.65);box-shadow:0 8px 26px rgba(255,91,110,.6),0 0 0 1.5px rgba(0,0,0,.25)}
+  .scard.fly-right .stamp.like{opacity:1;transform:rotate(-11deg) scale(1)}
+  .scard.fly-left .stamp.nope{opacity:1;transform:rotate(11deg) scale(1)}
   /* drag (gesture) phase — card moves partway, stamp ramps in */
   .scard.drag-right{transform:translate(78px,-10px) rotate(7deg)}
   .scard.drag-left{transform:translate(-78px,-10px) rotate(-7deg)}
-  .scard.drag-right .stamp.like{opacity:1}
-  .scard.drag-left .stamp.nope{opacity:1}
+  .scard.drag-right .stamp.like{opacity:1;transform:rotate(-11deg) scale(1)}
+  .scard.drag-left .stamp.nope{opacity:1;transform:rotate(11deg) scale(1)}
   /* finger / touch cue */
   .touch{position:absolute;left:50%;top:58%;width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,.14);border:1.5px solid rgba(255,255,255,.3);transform:translate(-50%,-50%) scale(0);opacity:0;transition:transform .62s cubic-bezier(.4,0,.2,1),opacity .25s;pointer-events:none;z-index:5}
   .touch.go-right{opacity:1;transform:translate(calc(-50% + 96px),-50%) scale(1)}
