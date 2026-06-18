@@ -29,8 +29,8 @@ portfolio — then (optionally) place **real orders through your own broker**, w
 ## Quickstart (safe demo — no keys, no money)
 
 ```bash
-git clone <this-repo>
-cd stocker            # the app folder
+git clone https://github.com/ASHISH-KUMAR-PANDEY/stocker.git
+cd stocker
 python3 -m pip install -r requirements.txt
 python3 server.py     # → http://127.0.0.1:4173
 ```
