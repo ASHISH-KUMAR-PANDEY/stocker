@@ -1,0 +1,76 @@
+{
+  "date": "2026-06-17",
+  "source": "NSE Bhavcopy (EOD)",
+  "quotes": {
+    "ADANIGREEN": {
+      "price": 1465.8,
+      "chg": -1.13,
+      "vol": 2163196
+    },
+    "DMART": {
+      "price": 4287.5,
+      "chg": 2.05,
+      "vol": 1183530
+    },
+    "BAJFINANCE": {
+      "price": 958.4,
+      "chg": -0.13,
+      "vol": 5682977
+    },
+    "COALINDIA": {
+      "price": 455.75,
+      "chg": 1.06,
+      "vol": 9064734
+    },
+    "HDFCBANK": {
+      "price": 787.1,
+      "chg": 0.28,
+      "vol": 32405604
+    },
+    "HINDUNILVR": {
+      "price": 2197.6,
+      "chg": -0.1,
+      "vol": 1511401
+    },
+    "INFY": {
+      "price": 1157.7,
+      "chg": 1.23,
+      "vol": 5995119
+    },
+    "ITC": {
+      "price": 290.75,
+      "chg": -0.31,
+      "vol": 8626353
+    },
+    "MARUTI": {
+      "price": 13630.0,
+      "chg": -0.45,
+      "vol": 241534
+    },
+    "ONGC": {
+      "price": 245.0,
+      "chg": -1.29,
+      "vol": 12816262
+    },
+    "RELIANCE": {
+      "price": 1332.7,
+      "chg": 0.29,
+      "vol": 10029170
+    },
+    "SUNPHARMA": {
+      "price": 1820.4,
+      "chg": 1.09,
+      "vol": 1771990
+    },
+    "TCS": {
+      "price": 2223.0,
+      "chg": 1.09,
+      "vol": 2865010
+    },
+    "TATAPOWER": {
+      "price": 401.5,
+      "chg": -0.19,
+      "vol": 5958070
+    }
+  }
+}

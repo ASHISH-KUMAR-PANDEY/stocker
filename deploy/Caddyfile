@@ -1,0 +1,6 @@
+# Caddy auto-provisions + renews HTTPS (Let's Encrypt) and proxies to gunicorn.
+# Replace stocker.example.com with your real domain. Put this at /etc/caddy/Caddyfile.
+stocker.example.com {
+    encode gzip
+    reverse_proxy 127.0.0.1:8000
+}
