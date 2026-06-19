@@ -25,8 +25,11 @@
   nav{display:flex;align-items:center;justify-content:space-between;padding:20px 0}
   .logo{font-weight:900;font-size:30px;letter-spacing:-.6px}
   .logo span{color:var(--brand)}
+  .nav-right{display:flex;gap:10px;align-items:center}
   .nav-cta{font-size:14px;font-weight:700;background:var(--surface2);border:1px solid var(--line);padding:9px 16px;border-radius:11px;transition:.15s}
   .nav-cta:hover{border-color:#3a3d4d}
+  .nav-cta.star{display:inline-flex;align-items:center;gap:6px;font-variant-numeric:tabular-nums}
+  .nav-cta.star .s{color:var(--brand)}
 
   /* hero */
   .hero{display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center;padding:48px 0 70px}
@@ -150,7 +153,10 @@
 
   <nav>
     <div class="logo">Stock<span>er</span></div>
-    <a class="nav-cta" href="https://github.com/ASHISH-KUMAR-PANDEY/stocker">★ View on GitHub</a>
+    <div class="nav-right">
+      <a class="nav-cta star" id="ghstar" href="https://github.com/ASHISH-KUMAR-PANDEY/stocker/stargazers" title="Star on GitHub"><span class="s">★</span> <span id="ghstar-n">Star</span></a>
+      <a class="nav-cta" href="https://github.com/ASHISH-KUMAR-PANDEY/stocker">View on GitHub</a>
+    </div>
   </nav>
 
   <header class="hero">
@@ -338,6 +344,19 @@ python3 server.py&nbsp;&nbsp;&nbsp;<span class="c"># → http://127.0.0.1:4173</
     }, 720);
   }
   setTimeout(cycle, 1200);
+})();
+</script>
+
+<script>
+(function(){
+  var el=document.getElementById('ghstar-n'); if(!el) return;
+  var fmt=function(n){ return n>=1000 ? (n/1000).toFixed(1).replace(/\.0$/,'')+'k' : ''+n; };
+  var KEY='gh_stars';
+  try{ var c=JSON.parse(localStorage.getItem(KEY)||'null'); if(c && Date.now()-c.t<600000) el.textContent=fmt(c.n); }catch(e){}
+  fetch('https://api.github.com/repos/ASHISH-KUMAR-PANDEY/stocker')
+    .then(function(r){ return r.ok?r.json():null; })
+    .then(function(d){ if(d && typeof d.stargazers_count==='number'){ el.textContent=fmt(d.stargazers_count); try{localStorage.setItem(KEY,JSON.stringify({n:d.stargazers_count,t:Date.now()}));}catch(e){} } })
+    .catch(function(){});
 })();
 </script>
 </body>
