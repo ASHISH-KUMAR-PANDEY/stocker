@@ -1,0 +1,14 @@
+# One-click deploy of the Stocker DEMO (simulated — no keys, no real money).
+# Deploy: render.com → New → Blueprint → pick this repo → Apply.
+# Gives you a public URL like https://stocker-demo.onrender.com to embed on the landing.
+# DEMO mode is automatic (no KITE_API_KEY/SECRET set → simulated broker + orders).
+services:
+  - type: web
+    name: stocker-demo
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn -w 1 -b 0.0.0.0:$PORT server:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.4"
