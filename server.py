@@ -24,6 +24,7 @@ DEMO = not (API_KEY and API_SECRET)
 KITE = "https://api.kite.trade"
 PORT = int(os.environ.get("PORT", "4173"))
 MAX_ORDER_VALUE = float(os.environ.get("MAX_ORDER_VALUE", "5000"))  # ₹ safety cap per order/basket
+BASE = os.path.dirname(os.path.abspath(__file__))  # serve files relative to this file (works on Vercel too)
 
 app = Flask(__name__)
 # single-user prototype session (a real app keys this per-user)
@@ -45,11 +46,11 @@ def kite_get(path, token):
 # ---- static app ----
 @app.route("/")
 def root():
-    return send_from_directory(".", "index.html")
+    return send_from_directory(BASE, "index.html")
 
 @app.route("/data/<path:p>")
 def data_files(p):
-    return send_from_directory("data", p)
+    return send_from_directory(os.path.join(BASE, "data"), p)
 
 # ---- api ----
 @app.route("/api/status")
@@ -109,10 +110,10 @@ def preview():
     """Cost + funds preview before placing (one whole share per ticker)."""
     b = request.get_json(force=True, silent=True) or {}
     tickers = b.get("tickers", [])
+    if DEMO or STATE["access_token"] == "DEMO":   # demo is stateless (works on serverless)
+        return jsonify(demo=True, prices={t: None for t in tickers}, cash=None, cap=MAX_ORDER_VALUE)
     if STATE["access_token"] is None:
         return jsonify(error="not_connected"), 401
-    if DEMO or STATE["access_token"] == "DEMO":
-        return jsonify(demo=True, prices={t: None for t in tickers}, cash=None, cap=MAX_ORDER_VALUE)
     try:
         prices = _ltps(tickers)
         return jsonify(prices=prices, cash=_equity_cash(), cap=MAX_ORDER_VALUE)
@@ -122,10 +123,10 @@ def preview():
 @app.route("/api/orders")
 def orders():
     """Today's order book (status: COMPLETE / OPEN / REJECTED / ...)."""
+    if DEMO or STATE["access_token"] == "DEMO":   # demo is stateless
+        return jsonify(demo=True, orders=[])
     if STATE["access_token"] is None:
         return jsonify(error="not_connected"), 401
-    if DEMO or STATE["access_token"] == "DEMO":
-        return jsonify(demo=True, orders=[])
     try:
         rows = kite_get("/orders", STATE["access_token"])["data"]
         slim = [{"order_id": r.get("order_id"), "symbol": r.get("tradingsymbol"),
@@ -141,10 +142,10 @@ def order():
     b = request.get_json(force=True, silent=True) or {}
     sym = b.get("symbol", "")
     qty = int(b.get("qty", 1))
+    if DEMO or STATE["access_token"] == "DEMO":   # demo is stateless (works on serverless)
+        return jsonify(demo=True, order_id="DEMO-" + sym, status="simulated", symbol=sym, qty=qty)
     if STATE["access_token"] is None:
         return jsonify(error="not_connected"), 401
-    if DEMO or STATE["access_token"] == "DEMO":
-        return jsonify(demo=True, order_id="DEMO-" + sym, status="simulated", symbol=sym, qty=qty)
     try:
         # Zerodha disallows bare MARKET orders via API → place a protected LIMIT.
         ltp = _ltps([sym])[sym]
@@ -180,10 +181,10 @@ def order():
 
 @app.route("/api/holdings")
 def holdings():
-    if STATE["access_token"] in (None,):
-        return jsonify(error="not_connected"), 401
-    if DEMO or STATE["access_token"] == "DEMO":
+    if DEMO or STATE["access_token"] == "DEMO":   # demo is stateless
         return jsonify(demo=True, holdings=[])
+    if STATE["access_token"] is None:
+        return jsonify(error="not_connected"), 401
     return jsonify(holdings=kite_get("/portfolio/holdings", STATE["access_token"])["data"])
 
 if __name__ == "__main__":
