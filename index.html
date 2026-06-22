@@ -78,7 +78,21 @@
   }
   .logo { font-weight: 800; font-size: 21px; letter-spacing:-.03em; }
   .logo span { color: var(--brand); }
-  #restart { font-size:12px; color:var(--ink-3); cursor:pointer; font-weight:600; }
+  .you-btn { width:36px; height:36px; border-radius:50%; border:1px solid var(--line); background:var(--surface-2); color:var(--brand); font-size:16px; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:transform .15s var(--ease-spring), background .15s; flex:none; }
+  .you-btn:active { transform:scale(.9); }
+  .you-btn:hover { background:var(--surface-3); }
+  .you-btn.on { background:var(--brand); color:var(--brand-ink); border-color:var(--brand); box-shadow:var(--glow-brand); }
+  .you-reset { width:100%; margin-top:22px; padding:13px; border:1px solid var(--line); border-radius:14px; background:transparent; color:var(--ink-3); font-weight:700; font-size:13px; cursor:pointer; transition:.15s; }
+  .you-reset:hover { color:var(--down); border-color:rgba(255,91,110,.4); }
+  /* logos inside small list badges */
+  .mini { position:relative; overflow:hidden; }
+  .mini img { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; background:#fff; padding:5px; }
+  /* matches list row right column */
+  .m-right { text-align:right; flex:none; }
+  .m-score { font-size:18px; font-weight:800; color:var(--brand); letter-spacing:-.02em; font-feature-settings:"tnum" 1; }
+  .m-score i { font-size:11px; color:var(--ink-3); font-style:normal; font-weight:700; }
+  .m-price { font-size:12px; color:var(--ink-2); margin-top:2px; font-feature-settings:"tnum" 1; }
+  .m-tag { display:inline-block; font-size:10.5px; font-weight:800; color:var(--up); background:rgba(52,229,161,.12); border-radius:7px; padding:3px 7px; letter-spacing:.02em; }
   .disclaimer {
     font-size: 11px; color: var(--ink-3); text-align:center;
     padding: 0 18px 8px; letter-spacing:.01em;
@@ -501,7 +515,7 @@
 <div class="phone">
   <div class="topbar">
     <div class="logo">Stock<span>er</span></div>
-    <div id="restart">Reset</div>
+    <button class="you-btn hidden" id="you-btn" aria-label="You" title="You">✦</button>
   </div>
   <div class="disclaimer">Prototype • NSE end-of-day prices, curated info • educational only — not investment advice</div>
 
@@ -596,7 +610,16 @@
     <div class="hint">Swipe right to like · left to pass · a strong fit becomes a match · ★ watch</div>
   </div>
 
-  <!-- PORTFOLIO -->
+  <!-- MATCHES (shortlist of liked stocks — not invested) -->
+  <div id="screen-matches" class="screen hidden">
+    <div class="pf">
+      <div class="pf-head" id="matches-head"></div>
+      <div class="pf-invest" id="m-invest"></div>
+      <div id="m-list"></div>
+    </div>
+  </div>
+
+  <!-- PORTFOLIO (only stocks you actually invested in) -->
   <div id="screen-pf" class="screen hidden">
     <div class="pf">
       <div class="pf-head">
@@ -626,14 +649,15 @@
       <div id="you-broker"></div>
       <div class="you-ach-h">Achievements</div>
       <div class="ach-grid" id="ach-grid"></div>
+      <button id="you-reset" class="you-reset">Reset everything · start over</button>
     </div>
   </div>
 
   <!-- TABS -->
   <div class="tabs hidden" id="tabs">
+    <div class="tab" data-tab="matches"><span class="ic">💚</span>Matches</div>
     <div class="tab on" data-tab="deck"><span class="ic">🔥</span>Discover</div>
     <div class="tab" data-tab="pf"><span class="ic">📊</span>Portfolio</div>
-    <div class="tab" data-tab="you"><span class="ic">✦</span>You</div>
   </div>
 </div>
 
@@ -782,6 +806,7 @@ document.getElementById('ob-go').addEventListener('click', () => {
   saveState();
   show('deck');
   document.getElementById('tabs').classList.remove('hidden');
+  document.getElementById('you-btn').classList.remove('hidden');
   renderDeck();
   maybeShowSwipeTutorial();
 });
@@ -926,7 +951,7 @@ const deck = document.getElementById('deck');
 function renderDeck(){
   deck.innerHTML='';
   if (!queue.length){
-    deck.innerHTML = `<div class="empty"><h2>That's everyone for today 🎉</h2><p>You matched with ${watchlist.length} stock${watchlist.length===1?'':'s'} — they're waiting in your Portfolio. Reset to meet a different type.</p></div>`;
+    deck.innerHTML = `<div class="empty"><h2>That's everyone for today 🎉</h2><p>You matched with ${watchlist.length} stock${watchlist.length===1?'':'s'} — they're waiting in your Matches. Reset to meet a different type.</p></div>`;
     return;
   }
   // render up to 3 stacked, top last
@@ -1141,9 +1166,9 @@ function showMatchModal(s){
   m.innerHTML=`
     <div class="modal-card" style="--c:${s.color}">${s.tk.slice(0,2)}</div>
     <h1>It's a match!</h1>
-    <p>You and <b>${s.tk}</b> are a <b>${s.score}/100</b> match. It's in your paper portfolio now — track it, no real money moved.</p>
+    <p>You and <b>${s.tk}</b> are a <b>${s.score}/100</b> match. Added to your matches — invest whenever you're ready, no money moved yet.</p>
     <button class="btn" style="max-width:240px" id="mk">Keep swiping</button>
-    <button class="btn ghost" style="max-width:240px;margin-top:10px" id="mv">View portfolio</button>`;
+    <button class="btn ghost" style="max-width:240px;margin-top:10px" id="mv">View matches</button>`;
   document.querySelector('.phone').appendChild(m);
   // confetti burst
   const emojis=['🎉','✨','💚','⭐','🍋'];
@@ -1157,7 +1182,7 @@ function showMatchModal(s){
     setTimeout(()=>c.remove(), 1200);
   }
   m.querySelector('#mk').onclick=()=>m.remove();
-  m.querySelector('#mv').onclick=()=>{m.remove(); show('pf'); renderPortfolio();};
+  m.querySelector('#mv').onclick=()=>{m.remove(); show('matches'); renderMatches();};
   m.addEventListener('click', e=>{ if(e.target===m) m.remove(); });
 }
 
@@ -1214,14 +1239,22 @@ const BROKERS={
   dhan:   {name:'Dhan',    mark:'D', color:'#1AA37A'},
 };
 const brokerName = () => broker ? BROKERS[broker].name : null;
-const PAPER_PER=500;  // paper $ "invested" per match
 function simReturn(s){
   const seed = s.tk.charCodeAt(0)*5 + s.tk.charCodeAt(1)*3;
   return ((seed*37) % 100)/100 * 0.46 - 0.17;   // deterministic -17%..+29%
 }
+// Invested positions come from the investment plan — NOT every match. A match is
+// just a shortlist entry; you only "own" what you actually invested in.
 function holdings(){
-  return watchlist.map(s=>{
-    const ret=simReturn(s), cost=PAPER_PER, value=cost*(1+ret);
+  if(!plan || !plan.tickers || !plan.tickers.length) return [];
+  const inv = plan.tickers
+    .map(tk => watchlist.find(w=>w.tk===tk) || (BY_SYM[tk] ? {...BY_SYM[tk], ...matchScore(BY_SYM[tk])} : null))
+    .filter(Boolean);
+  if(!inv.length) return [];
+  const sumScore = inv.reduce((a,s)=>a+(s.score||0),0) || 1;
+  return inv.map(s=>{
+    const w = plan.weighting==='conviction' ? (s.score||0)/sumScore : 1/inv.length;
+    const cost = plan.amt * w, ret = simReturn(s), value = cost*(1+ret);
     return { s, cost, value, ret, pl:value-cost };
   });
 }
@@ -1247,6 +1280,48 @@ function fillBrokerRow(el, after){
   }
 }
 
+// ---------- MATCHES: shortlist of liked stocks (not invested) ----------
+function renderMatches(){
+  const head=document.getElementById('matches-head');
+  const inv=document.getElementById('m-invest');
+  const list=document.getElementById('m-list');
+  if(!watchlist.length){
+    head.innerHTML=`<div><div class="pf-label">Your matches</div><div class="pf-total" style="font-size:26px">No matches yet</div></div>`;
+    inv.innerHTML='';
+    list.innerHTML=`<div class="wl-empty">Swipe right on stocks you like in <b style="color:var(--ink)">Discover</b> — they'll land here as your shortlist.</div>`;
+    return;
+  }
+  const investedTk = new Set(plan&&plan.tickers?plan.tickers:[]);
+  head.innerHTML=`<div><div class="pf-label">Your matches</div>
+    <div class="pf-total" style="font-size:30px">${watchlist.length} match${watchlist.length===1?'':'es'}</div>
+    <div class="pf-sub"><span class="muted">${investedTk.size?investedTk.size+' invested · ':''}stocks you liked — yet to invest</span></div></div>`;
+  const freqTxt = plan ? (plan.freq==='once'?'one-time':plan.freq==='week'?'/week':'/month') : '';
+  if(plan){
+    inv.innerHTML=`<div class="pi-top"><div>
+        <div class="pi-t">Investing ${money0(plan.amt)}${freqTxt} ✓</div>
+        <div class="pi-s">${plan.tickers.length} of your matches · ${plan.weighting==='conviction'?'weighted to favorites':'balanced'} basket · track it in Portfolio</div>
+      </div><button class="pi-btn on" id="m-invest-btn">Manage</button></div>`;
+  } else {
+    inv.innerHTML=`<div class="pi-top"><div>
+        <div class="pi-t">Invest in your matches</div>
+        <div class="pi-s">Turn the stocks you liked into a basket — one-time or recurring. Paper now, real when you connect a broker.</div>
+      </div><button class="pi-btn" id="m-invest-btn">Set up</button></div>`;
+  }
+  inv.querySelector('#m-invest-btn').onclick=openInvest;
+  list.innerHTML=watchlist.map(s=>{
+    const cc=s.chg>=0?'up':'down';
+    const right = investedTk.has(s.tk)
+      ? `<span class="m-tag">Invested ✓</span>`
+      : `<div class="m-score">${s.score}<i>/100</i></div><div class="m-price ${cc}">${s.chg>=0?'▲':'▼'} ${Math.abs(s.chg)}%</div>`;
+    return `<div class="hold" data-tk="${s.tk}">
+      <div class="mini" style="--c:${s.color}"><span class="tb-txt">${s.tk.slice(0,2)}</span><img src="data/logos/${s.tk}.png" alt="" onerror="this.remove()"></div>
+      <div class="grow"><div class="tk2">${s.tk}</div><div class="nm2">₹${(+s.price).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2})} · ${s.name}</div></div>
+      <div class="m-right">${right}</div>
+    </div>`;
+  }).join('');
+  list.querySelectorAll('.hold').forEach(it=>{ it.onclick=()=>{ const s=watchlist.find(w=>w.tk===it.dataset.tk); if(s) showSheet(s); }; });
+}
+
 function renderPortfolio(){
   const list=document.getElementById('pf-list');
   const totalEl=document.getElementById('pf-total'), subEl=document.getElementById('pf-sub');
@@ -1258,11 +1333,14 @@ function renderPortfolio(){
   document.getElementById('pf-pill').textContent=connected?`🟢 Live · via ${brokerName()}`:'📝 Paper';
   document.getElementById('pf-label').textContent=connected?'Portfolio value':'Paper portfolio value';
   if(!h.length){
-    totalEl.textContent=money(0); subEl.innerHTML='<span class="muted">No matches yet</span>';
-    donut.innerHTML=''; inv.innerHTML=''; hh.textContent=''; document.getElementById('pf-broker').innerHTML=''; document.getElementById('pf-cash').innerHTML='';
-    list.innerHTML=`<div class="wl-empty">Swipe right to match — every match lands here as a practice position you can track with paper money.</div>`;
+    totalEl.textContent=money(0); subEl.innerHTML='<span class="muted">Nothing invested yet</span>';
+    donut.innerHTML=''; donut.style.display='none'; inv.innerHTML=''; inv.style.display='none';
+    hh.textContent=''; document.getElementById('pf-broker').innerHTML=''; document.getElementById('pf-cash').innerHTML='';
+    list.innerHTML=`<div class="wl-empty">You haven't invested yet.<br>Pick from your <b style="color:var(--ink)">Matches</b> and set up an investment — your positions and P&amp;L show up here.<br><br><button class="btn" id="go-matches" style="max-width:220px;margin:18px auto 0">Go to Matches →</button></div>`;
+    const gm=document.getElementById('go-matches'); if(gm) gm.onclick=()=>{ show('matches'); renderMatches(); };
     return;
   }
+  donut.style.display=''; inv.style.display='';
   const invested=h.reduce((a,x)=>a+x.cost,0), value=h.reduce((a,x)=>a+x.value,0);
   const pl=value-invested, plPct=pl/invested*100, c=pl>=0?'up':'down';
   totalEl.textContent=money(value);
@@ -1281,12 +1359,17 @@ function renderPortfolio(){
         <div class="pi-t">Investing ${money0(plan.amt)}${freqTxt} ✓</div>
         <div class="pi-s">${plan.weighting==='balanced'?'Balanced':'Weighted to favorites'} basket · ${plan.tickers.length} stocks${plan.freq!=='once'?' · next Monday':''} · via ${brokerName()}</div>
       </div><button class="pi-btn on" id="pi-btn">Manage</button></div>`;
-  } else if(plan){
+  } else if(plan && plan.broker && !BACKEND.demo){   // had a real broker, now disconnected
     inv.innerHTML=`<div class="pi-top"><div>
         <div class="pi-t">Plan paused</div>
         <div class="pi-s">Reconnect ${BROKERS[plan.broker]?BROKERS[plan.broker].name:'your broker'} to resume ${money0(plan.amt)}${freqTxt}.</div>
       </div><button class="pi-btn" id="pi-btn">Reconnect</button></div>`;
     act=()=>openConnect(renderPortfolio);
+  } else if(plan){                                    // paper investment
+    inv.innerHTML=`<div class="pi-top"><div>
+        <div class="pi-t">Investing ${money0(plan.amt)}${freqTxt} ✓</div>
+        <div class="pi-s">${plan.weighting==='conviction'?'Weighted to favorites':'Balanced'} basket · ${plan.tickers.length} stocks · paper</div>
+      </div><button class="pi-btn on" id="pi-btn">Manage</button></div>`;
   } else {
     inv.innerHTML=`<div class="pi-top"><div>
         <div class="pi-t">Invest in your matches</div>
@@ -1310,7 +1393,7 @@ function renderPortfolio(){
   hh.textContent='Holdings';
   list.innerHTML=h.map(x=>{ const cc=x.pl>=0?'up':'down'; return `
     <div class="hold" data-tk="${x.s.tk}">
-      <div class="mini" style="--c:${x.s.color}">${x.s.tk.slice(0,2)}</div>
+      <div class="mini" style="--c:${x.s.color}"><span class="tb-txt">${x.s.tk.slice(0,2)}</span><img src="data/logos/${x.s.tk}.png" alt="" onerror="this.remove()"></div>
       <div class="grow"><div class="tk2">${x.s.tk}</div><div class="nm2">${money(x.value)} · ${x.s.name}</div></div>
       <div class="pl"><div class="v ${cc}">${x.pl>=0?'+':'−'}${money(x.pl)}</div><div class="pct ${cc}">${x.pl>=0?'▲':'▼'} ${Math.abs(x.ret*100).toFixed(1)}%</div></div>
     </div>`; }).join('');
@@ -1360,7 +1443,11 @@ function openHolding(s){
     <div class="inv-foot"><button class="btn ghost" id="det">View details</button><button class="btn" id="sell">Sell position</button></div>
   </div>`;
   bg.querySelector('#det').onclick=()=>{ close(); showSheet(s); };
-  bg.querySelector('#sell').onclick=()=>{ cash+=x.value; watchlist=watchlist.filter(w=>w.tk!==s.tk); saveState(); close(); renderPortfolio(); };
+  bg.querySelector('#sell').onclick=()=>{
+    cash+=x.value;
+    if(plan && plan.tickers){ plan.tickers=plan.tickers.filter(t=>t!==s.tk); if(!plan.tickers.length) plan=null; }  // divest, but it stays a match
+    saveState(); close(); renderPortfolio();
+  };
 }
 
 // ---------- You tab ----------
@@ -1695,12 +1782,16 @@ function openInvest(){
 // ---------- nav ----------
 function show(which){
   document.getElementById('screen-deck').classList.toggle('hidden', which!=='deck');
+  document.getElementById('screen-matches').classList.toggle('hidden', which!=='matches');
   document.getElementById('screen-pf').classList.toggle('hidden', which!=='pf');
   document.getElementById('screen-you').classList.toggle('hidden', which!=='you');
   document.getElementById('screen-ob').classList.toggle('hidden', which!=='ob');
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on', t.dataset.tab===which));
+  document.getElementById('you-btn').classList.toggle('on', which==='you');
 }
-document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{ show(t.dataset.tab); if(t.dataset.tab==='pf') renderPortfolio(); if(t.dataset.tab==='you') renderYou(); });
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{ show(t.dataset.tab); if(t.dataset.tab==='matches') renderMatches(); if(t.dataset.tab==='pf') renderPortfolio(); });
+document.getElementById('you-btn').onclick=()=>{ show('you'); renderYou(); };
+document.getElementById('you-reset').onclick=()=>{ try{ localStorage.removeItem('stocker_state'); }catch(e){} location.reload(); };
 
 // ---------- persistence (localStorage — single self-hosted user, no DB) ----------
 function saveState(){
@@ -1717,11 +1808,10 @@ function loadState(){
   buildQueue();
   watchlist = (s.watch||[]).map(tk=>{ const st=BY_SYM[tk]; return st ? {...st, ...matchScore(st)} : null; }).filter(Boolean);
   document.getElementById('tabs').classList.remove('hidden');
+  document.getElementById('you-btn').classList.remove('hidden');
   show('deck'); renderDeck();
   return true;
 }
-
-document.getElementById('restart').onclick=()=>{ try{ localStorage.removeItem('stocker_state'); }catch(e){} location.reload(); };
 
 loadState();   // resume a returning user's saved session, else stay on onboarding
 </script>
