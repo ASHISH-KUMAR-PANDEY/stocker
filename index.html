@@ -1295,7 +1295,7 @@ function renderMatches(){
   head.innerHTML=`<div><div class="pf-label">Your matches</div>
     <div class="pf-total" style="font-size:30px">${watchlist.length} match${watchlist.length===1?'':'es'}</div>
     <div class="pf-sub"><span class="muted">${investedTk.size?investedTk.size+' invested · ':''}stocks you liked — yet to invest</span></div></div>`;
-  const freqTxt = plan ? (plan.freq==='once'?'one-time':plan.freq==='week'?'/week':'/month') : '';
+  const freqTxt = plan ? (plan.freq==='once'?' one-time':plan.freq==='week'?'/week':'/month') : '';
   if(plan){
     inv.innerHTML=`<div class="pi-top"><div>
         <div class="pi-t">Investing ${money0(plan.amt)}${freqTxt} ✓</div>
@@ -1352,7 +1352,7 @@ function renderPortfolio(){
 
   fillBrokerRow(document.getElementById('pf-broker'), renderPortfolio);
 
-  const freqTxt = plan ? (plan.freq==='once'?'one-time':plan.freq==='week'?'/week':'/month') : '';
+  const freqTxt = plan ? (plan.freq==='once'?' one-time':plan.freq==='week'?'/week':'/month') : '';
   let act=openInvest;
   if(plan && connected){
     inv.innerHTML=`<div class="pi-top"><div>

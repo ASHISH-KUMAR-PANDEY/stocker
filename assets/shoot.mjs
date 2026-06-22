@@ -1,18 +1,21 @@
 // Dependency-free screenshot driver: launches headless Chrome, drives the live
 // app on :4192 via the DevTools Protocol, saves PNGs to assets/shots/.
+// Captures the current IA: onboarding, swipe tutorial, deck card, match,
+// Matches (shortlist), Portfolio (invested), You.
 import { spawn } from 'node:child_process';
-import { writeFileSync, mkdirSync } from 'node:fs';
+import { writeFileSync, mkdirSync, rmSync } from 'node:fs';
 
 const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
-const APP = 'http://localhost:4192/';
+const APP = 'http://localhost:4192/index.html';
 const OUT = new URL('./shots/', import.meta.url).pathname;
+try { rmSync(OUT, { recursive: true, force: true }); } catch {}
 mkdirSync(OUT, { recursive: true });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const chrome = spawn(CHROME, [
   '--headless=new', '--disable-gpu', '--hide-scrollbars',
-  '--remote-debugging-port=9222', '--user-data-dir=/tmp/stocker-shots',
-  '--window-size=430,900', APP,
+  '--remote-debugging-port=9222', '--user-data-dir=/tmp/stocker-shots2',
+  '--window-size=430,932', APP,
 ]);
 chrome.on('error', (e) => { console.error('chrome spawn error', e); process.exit(1); });
 
@@ -38,10 +41,8 @@ ws.onmessage = (m) => {
 };
 const send = (method, params = {}) =>
   new Promise((res) => { const i = ++id; pending.set(i, res); ws.send(JSON.stringify({ id: i, method, params })); });
-
 const evall = async (expr) =>
   (await send('Runtime.evaluate', { expression: `(function(){${expr}})()`, returnByValue: true })).result?.value;
-
 async function shot(name) {
   const r = await send('Page.captureScreenshot', { format: 'png', fromSurface: true, captureBeyondViewport: false });
   writeFileSync(OUT + name + '.png', Buffer.from(r.data, 'base64'));
@@ -50,60 +51,70 @@ async function shot(name) {
 
 await send('Page.enable');
 await send('Runtime.enable');
-await send('Emulation.setDeviceMetricsOverride', { width: 430, height: 900, deviceScaleFactor: 2, mobile: true });
+await send('Emulation.setDeviceMetricsOverride', { width: 430, height: 932, deviceScaleFactor: 2, mobile: true });
 await evall("try{localStorage.clear()}catch(e){}; location.reload(); return 1;");
-await sleep(1800);
+await sleep(1900);
 
 // 1) onboarding
 await evall("window.scrollTo(0,0); return 1;");
 await shot('01-onboarding');
 
 // answer the quiz + build the deck
-const picked = await evall(`
-  function pick(t){var e=[].slice.call(document.querySelectorAll('.chip')).find(function(x){return x.textContent.indexOf(t)>-1;}); if(e){e.click(); return true;} return false;}
-  var ok=[pick('Grow long-term'),pick('Balanced'),pick('1\\u20135 years'),pick('Growth'),pick('Tech'),pick('Clean')];
+await evall(`
+  function pick(t){var e=[].slice.call(document.querySelectorAll('.chip')).find(function(x){return x.textContent.indexOf(t)>-1;}); if(e){e.click();}}
+  ['Grow long-term','Balanced','1\\u20135 years','Growth','Tech','Clean'].forEach(pick);
   var b=[].slice.call(document.querySelectorAll('button')).find(function(x){return x.textContent.indexOf('Build my deck')>-1;}); if(b)b.click();
-  return JSON.stringify(ok);
+  return 1;
 `);
-console.log('picked', picked);
 await sleep(900);
-// dismiss any coach/explainer overlays (general coach + "your-type score" tip)
-const closeCoach = `
-  var c=document.querySelector('#coach-ok'); if(c){c.click();}
-  var b=[].slice.call(document.querySelectorAll('button,.btn')).find(function(x){return /^(got it|ok|keep swiping)$/i.test(x.textContent.trim());});
+
+// 2) first-run swipe tutorial (auto-shows over the first card)
+await shot('02-swipe-tutorial');
+
+// dismiss the tutorial + the your-type-score tip that follows
+const closeOverlays = `
+  var c=document.querySelector('#st-ok'); if(c) c.click();
+  var b=[].slice.call(document.querySelectorAll('button,.btn')).find(function(x){return /^(got it|got it — start swiping|ok|keep swiping)$/i.test(x.textContent.trim());});
   if(b){b.click(); return b.textContent.trim();}
-  return c?'coach-ok':'none';
+  return 'none';
 `;
-await evall(closeCoach); await sleep(400);
-await evall(closeCoach); await sleep(400);   // second pass for a chained tip
-await evall("window.scrollTo(0,0); return 1;");
-await sleep(1300); // let the card rise + score meter fill
+await evall(closeOverlays); await sleep(500);
+await evall(closeOverlays); await sleep(500);
+await evall("['.swipe-tut','.coach-bg'].forEach(function(s){var e=document.querySelector(s); if(e) e.remove();}); window.scrollTo(0,0); return 1;");
+await sleep(1300); // card rise + score meter fill
 
-// 2) deck card
-const top = await evall("var t=document.querySelector('#deck .card .tk, .card .tk'); return t?t.textContent:'?';");
-console.log('top card', top);
-await shot('02-deck');
+// 3) deck card (with company logo)
+await shot('03-deck');
 
-// like one card first (adds a holding) so the portfolio is diversified
-await evall("var b=document.getElementById('b-like'); if(b)b.click(); return 1;");
-await sleep(1000); // card flies out, next card rises
-
-// 3) match moment (super-like guarantees the modal)
+// 4) match moment — super-like the top card guarantees the modal
 await evall("var b=document.getElementById('b-super'); if(b)b.click(); return 1;");
+await sleep(1500);
+await shot('04-match');
+await evall("var k=document.getElementById('mk'); if(k)k.click(); document.querySelectorAll('.modal-bg').forEach(function(e){e.remove();}); return 1;");
+
+// build a richer shortlist, then 5) Matches tab
+await evall(`
+  ['RELIANCE','TCS','HDFCBANK','DMART','INFY','MARUTI'].forEach(function(tk){ var st=BY_SYM[tk]; if(st) addMatch(Object.assign({}, st, matchScore(st))); });
+  document.querySelectorAll('.modal-bg').forEach(function(e){e.remove();});
+  saveState(); show('matches'); renderMatches(); window.scrollTo(0,0); return watchlist.length;
+`);
 await sleep(500);
-await shot('03-match');
+await shot('05-matches');
 
-// 4) portfolio
-await evall("var b=document.getElementById('mv'); if(b)b.click(); window.scrollTo(0,0); return 1;");
-await sleep(700);
-await shot('04-portfolio');
+// 6) Portfolio — simulate a completed paper investment so positions + P&L show
+await evall(`
+  plan={amt:1500, freq:'once', weighting:'balanced', tickers:['RELIANCE','TCS','HDFCBANK','DMART'], broker:null, orders:[{demo:true}]};
+  saveState(); show('pf'); renderPortfolio(); window.scrollTo(0,0); return 1;
+`);
+await sleep(500);
+await shot('06-portfolio');
 
-// 5) you / your investing type
-await evall("var t=[].slice.call(document.querySelectorAll('[data-tab]')).find(function(x){return x.getAttribute('data-tab')==='you';}); if(t)t.click(); window.scrollTo(0,0); return 1;");
-await sleep(600);
-await shot('05-you');
+// 7) You — opened from the top-right profile button
+await evall("var y=document.getElementById('you-btn'); if(y)y.click(); window.scrollTo(0,0); return 1;");
+await sleep(500);
+await shot('07-you');
 
 ws.close();
 chrome.kill();
-console.log('done');
+console.log('=== DONE ===');
 process.exit(0);
