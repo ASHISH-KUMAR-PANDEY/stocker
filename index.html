@@ -201,6 +201,30 @@
   .coach p b { color:var(--ink); }
   .coach .btn { margin-top:16px; }
 
+  /* one-time first-run swipe tutorial (mirrors the landing's swipe demo vocabulary) */
+  .swipe-tut { position:absolute; inset:0; z-index:45; background:rgba(7,7,10,.84); -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:26px; padding:30px; animation:cardFocus .4s var(--ease-spring); }
+  .st-stage { position:relative; width:190px; height:140px; flex:none; }
+  .st-card { position:absolute; inset:0; border-radius:24px; background:var(--surface-1); box-shadow:var(--sh-card); display:flex; align-items:center; justify-content:center; }
+  .st-card .lab { color:var(--ink-3); font-size:13px; font-weight:700; }
+  .swipe-tut .stamp { top:16px; }
+  .st-finger { position:absolute; left:50%; top:62%; width:40px; height:40px; border-radius:50%; background:rgba(255,255,255,.18); border:1.5px solid rgba(255,255,255,.34); transform:translate(-50%,-50%); pointer-events:none; }
+  .st-copy { max-width:300px; text-align:center; }
+  .st-copy h3 { font-size:20px; letter-spacing:-.02em; margin-bottom:14px; }
+  .st-legend { list-style:none; text-align:left; display:flex; flex-direction:column; gap:11px; margin-bottom:20px; }
+  .st-legend li { font-size:13.5px; color:var(--ink-2); display:flex; align-items:center; gap:11px; line-height:1.35; }
+  .st-legend b { color:var(--ink); }
+  .st-key { width:27px; height:27px; flex:none; border-radius:8px; background:var(--surface-2); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:14px; color:var(--ink); }
+  .st-key.like { background:var(--brand); color:var(--brand-ink); }
+  .st-key.pass { background:var(--down); color:#fff; }
+  @keyframes stFinger { 0%,8%{transform:translate(-50%,-50%)} 22%,30%{transform:translate(calc(-50% + 74px),-50%)} 38%,54%{transform:translate(-50%,-50%)} 68%,76%{transform:translate(calc(-50% - 74px),-50%)} 84%,100%{transform:translate(-50%,-50%)} }
+  @keyframes stCard { 0%,8%{transform:none} 22%,30%{transform:translate(58px,-8px) rotate(6deg)} 38%,54%{transform:none} 68%,76%{transform:translate(-58px,-8px) rotate(-6deg)} 84%,100%{transform:none} }
+  @keyframes stLike { 0%,8%{opacity:0} 22%,30%{opacity:1} 38%,100%{opacity:0} }
+  @keyframes stNope { 0%,54%{opacity:0} 68%,76%{opacity:1} 84%,100%{opacity:0} }
+  .swipe-tut.play .st-finger { animation:stFinger 3.4s var(--ease-out) infinite; }
+  .swipe-tut.play .st-card { animation:stCard 3.4s var(--ease-out) infinite; }
+  .swipe-tut.play .st-card .stamp.like { animation:stLike 3.4s var(--ease-out) infinite; }
+  .swipe-tut.play .st-card .stamp.nope { animation:stNope 3.4s var(--ease-out) infinite; }
+
   .stats { display:flex; gap:28px; padding:10px 18px 0; }
   .stat { flex:none; background:none; border-radius:0; padding:0; }
   .stat .k { font-size:10.5px; color:var(--ink-3); text-transform:uppercase; letter-spacing:.06em; font-weight:700; }
@@ -565,7 +589,7 @@
       <div class="fab super" id="b-super">★</div>
       <div class="fab like" id="b-like">♥</div>
     </div>
-    <div class="hint">Drag the card, or tap the buttons · ★ = watch</div>
+    <div class="hint">Swipe right to like · left to pass · a strong fit becomes a match · ★ watch</div>
   </div>
 
   <!-- PORTFOLIO -->
@@ -755,6 +779,7 @@ document.getElementById('ob-go').addEventListener('click', () => {
   show('deck');
   document.getElementById('tabs').classList.remove('hidden');
   renderDeck();
+  maybeShowSwipeTutorial();
 });
 
 // ---------- streak (real, day-based, persisted) ----------
@@ -897,7 +922,7 @@ const deck = document.getElementById('deck');
 function renderDeck(){
   deck.innerHTML='';
   if (!queue.length){
-    deck.innerHTML = `<div class="empty"><h2>That's the deck for today 🎉</h2><p>You matched with ${watchlist.length} stock${watchlist.length===1?'':'s'}. Check your Portfolio tab, or reset to explore a different taste.</p></div>`;
+    deck.innerHTML = `<div class="empty"><h2>That's everyone for today 🎉</h2><p>You matched with ${watchlist.length} stock${watchlist.length===1?'':'s'} — they're waiting in your Portfolio. Reset to meet a different type.</p></div>`;
     return;
   }
   // render up to 3 stacked, top last
@@ -915,7 +940,10 @@ function renderDeck(){
     if (isTop) attachDrag(el, s);
   });
   animateTop();
-  if (!scoreIntroShown && queue.length){ scoreIntroShown = true; setTimeout(showScoreInfo, 850); }
+  if (!scoreIntroShown && queue.length){
+    let tutPending=false; try{ tutPending=!localStorage.getItem('stocker_swipe_tutorial_seen'); }catch(e){}
+    if(!tutPending){ scoreIntroShown = true; setTimeout(showScoreInfo, 850); }  // else the tutorial arms it on dismiss
+  }
 }
 let swiped = false;
 
@@ -1002,6 +1030,52 @@ function showScoreInfo(){
 // reopen via the "?" on any card
 deck.addEventListener('click', e=>{ if(e.target.closest('.lbl-info')) showScoreInfo(); });
 
+// ---------- one-time first-run swipe tutorial ----------
+const TUT_KEY='stocker_swipe_tutorial_seen';
+function armScoreIntro(){                 // hand off to the score tip after the tutorial closes
+  if(scoreIntroShown) return;
+  scoreIntroShown=true; saveState();
+  setTimeout(showScoreInfo, 450);
+}
+function maybeShowSwipeTutorial(){
+  let seen=false; try{ seen=!!localStorage.getItem(TUT_KEY); }catch(e){}
+  if(seen){ armScoreIntro(); return; }            // returning user → straight to score tip
+  if(document.querySelector('.swipe-tut')) return;
+  const t=document.createElement('div'); t.className='swipe-tut';
+  t.innerHTML=`
+    <div class="st-stage">
+      <div class="st-card">
+        <div class="stamp like">INTO IT</div>
+        <div class="stamp nope">PASS</div>
+        <span class="lab">Swipe me</span>
+      </div>
+      <div class="st-finger"></div>
+    </div>
+    <div class="st-copy">
+      <h3>Here's how it works</h3>
+      <ul class="st-legend">
+        <li><span class="st-key like">→</span><span><b>Swipe right</b> to like — a strong fit becomes a <b>match</b></span></li>
+        <li><span class="st-key pass">←</span><span><b>Swipe left</b> to pass</span></li>
+        <li><span class="st-key">★</span><span>Tap <b>★</b> to watch · <b>ℹ️</b> for full details</span></li>
+      </ul>
+      <button class="btn" id="st-ok">Got it — start swiping</button>
+    </div>`;
+  document.querySelector('.phone').appendChild(t);
+  if(REDUCED){
+    t.querySelector('.stamp.like').style.opacity=.42;
+    t.querySelector('.stamp.nope').style.opacity=.42;
+  } else {
+    requestAnimationFrame(()=>t.classList.add('play'));
+  }
+  const close=()=>{
+    t.remove();
+    try{ localStorage.setItem(TUT_KEY,'1'); }catch(e){}
+    armScoreIntro();
+  };
+  t.querySelector('#st-ok').onclick=close;
+  t.addEventListener('click', e=>{ if(e.target===t) close(); });
+}
+
 // ---------- drag / swipe ----------
 function attachDrag(el, s){
   let startX=0,startY=0,dx=0,dy=0,drag=false;
@@ -1063,7 +1137,7 @@ function showMatchModal(s){
   m.innerHTML=`
     <div class="modal-card" style="--c:${s.color}">${s.tk.slice(0,2)}</div>
     <h1>It's a match!</h1>
-    <p><b>${s.tk}</b> scored <b>${s.score}/100</b> on your-type fit. Added to your paper portfolio to track — no real money moved.</p>
+    <p>You and <b>${s.tk}</b> are a <b>${s.score}/100</b> match. It's in your paper portfolio now — track it, no real money moved.</p>
     <button class="btn" style="max-width:240px" id="mk">Keep swiping</button>
     <button class="btn ghost" style="max-width:240px;margin-top:10px" id="mv">View portfolio</button>`;
   document.querySelector('.phone').appendChild(m);
@@ -1180,9 +1254,9 @@ function renderPortfolio(){
   document.getElementById('pf-pill').textContent=connected?`🟢 Live · via ${brokerName()}`:'📝 Paper';
   document.getElementById('pf-label').textContent=connected?'Portfolio value':'Paper portfolio value';
   if(!h.length){
-    totalEl.textContent=money(0); subEl.innerHTML='<span class="muted">No holdings yet</span>';
+    totalEl.textContent=money(0); subEl.innerHTML='<span class="muted">No matches yet</span>';
     donut.innerHTML=''; inv.innerHTML=''; hh.textContent=''; document.getElementById('pf-broker').innerHTML=''; document.getElementById('pf-cash').innerHTML='';
-    list.innerHTML=`<div class="wl-empty">Swipe right on stocks you like — they're auto-added here as practice positions so you can track them with paper money.</div>`;
+    list.innerHTML=`<div class="wl-empty">Swipe right to match — every match lands here as a practice position you can track with paper money.</div>`;
     return;
   }
   const invested=h.reduce((a,x)=>a+x.cost,0), value=h.reduce((a,x)=>a+x.value,0);
@@ -1306,7 +1380,7 @@ function renderYou(){
 
   const ins=document.getElementById('you-insight');
   if(watchlist.length<3){
-    ins.innerHTML=`<div class="ih">✦ Learning your taste…</div><p>Match with a few more stocks and I'll show how your real picks compare to the type you set up.</p>`;
+    ins.innerHTML=`<div class="ih">✦ Learning your taste…</div><p>Swipe through a few more — once you've matched a handful, I'll show how your real picks compare to your type.</p>`;
   } else {
     const volMap={low:1,medium:3,high:5};
     const avgVol=watchlist.reduce((a,s)=>a+volMap[s.vol],0)/watchlist.length;
